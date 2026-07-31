@@ -1,8 +1,7 @@
 import fitz
 from pathlib import Path
 
-from app.models.document import Document
-
+from app.domain.document import Document
 
 def extract_pdf(pdf_path: str) -> Document:
 
