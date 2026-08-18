@@ -1,73 +1,54 @@
+from app.api.routes.search_routes import router as search_router
+from app.api.routes.chat_routes import router as chat_router
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.indexer.watcher import scan_directory
-from app.processors.pdf_processor import extract_pdf
-from app.dispatcher.dispatcher import ProcessorDispatcher
-from app.services.indexing_service import IndexingService
 
-from app.database.session import SessionLocal
-from app.repositories.document_repository import DocumentRepository
-from app.services.document_service import DocumentService
+from app.api.routes.document_routes import router as document_router
+from app.api.routes.index_routes import router as index_router
 
-db = SessionLocal()
+from app.database.connection import create_database
 
-repository = DocumentRepository(db)
-
-document_service = DocumentService(repository)
-
-dispatcher = ProcessorDispatcher()
-indexing_service = IndexingService(document_service)
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
 )
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+app.include_router(document_router)
+app.include_router(index_router)
+app.include_router(search_router)
+app.include_router(chat_router)
+
 @app.get("/")
 async def root():
     return {
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "status": "running"
+        "status": "running",
     }
 
 
 @app.get("/scan")
 async def scan():
-
     files = scan_directory(".")
 
     return {
         "total_files": len(files),
-        "files": [str(file) for file in files]
+        "files": [str(file) for file in files],
     }
 
-@app.get("/read-pdf")
-async def read_pdf():
-
-    document = dispatcher.process("sample.pdf")
-
-    return {
-        "filename": document.filename,
-        "file_type": document.file_type,
-        "pages": document.metadata["pages"],
-        "text": document.text[:1000],
-    }
-
-
-@app.get("/index")
-async def index():
-
-    documents = indexing_service.index_folder(".")
-
-    return {
-        "indexed": len(documents)
-    }
-
-
-from app.database.connection import create_database
 
 create_database()
-
-

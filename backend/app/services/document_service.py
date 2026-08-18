@@ -13,3 +13,7 @@ class DocumentService:
     def get_documents(self):
 
         return self.repository.get_all()
+
+    def search_documents(self, query):
+
+        return self.repository.search(query)

@@ -3,6 +3,7 @@ from pathlib import Path
 
 from app.domain.document import Document
 
+
 def extract_pdf(pdf_path: str) -> Document:
 
     pdf = fitz.open(pdf_path)
