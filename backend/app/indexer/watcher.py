@@ -2,16 +2,8 @@ from pathlib import Path
 
 SUPPORTED_EXTENSIONS = {
     ".pdf",
-    ".docx",
-    ".pptx",
     ".txt",
     ".md",
-    ".png",
-    ".jpg",
-    ".jpeg",
-    ".mp3",
-    ".wav",
-    ".mp4",
     ".py",
     ".cpp",
     ".java",

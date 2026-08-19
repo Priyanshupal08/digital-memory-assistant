@@ -11,8 +11,25 @@ class DocumentRepository:
 
     def save(self, document):
 
-        if self.exists(document.file_path):
-            return None
+        existing = (
+            self.db.query(DocumentModel)
+            .filter(DocumentModel.file_path == document.file_path)
+            .first()
+        )
+
+        if existing:
+
+            if existing.text == document.text:
+                return existing
+
+            existing.filename = document.filename
+            existing.file_type = document.file_type
+            existing.text = document.text
+
+            self.db.commit()
+            self.db.refresh(existing)
+
+            return existing
 
         if self.exists_by_text(document.text):
             return None
@@ -65,3 +82,20 @@ class DocumentRepository:
             )
             .all()
         )
+
+
+    def delete_by_path(self, file_path):
+
+        document = (
+            self.db.query(DocumentModel)
+            .filter(DocumentModel.file_path == file_path)
+            .first()
+        )
+
+        if not document:
+            return False
+
+        self.db.delete(document)
+        self.db.commit()
+
+        return True

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from app.processors.pdf_processor import extract_pdf
+from app.processors.text_processor import extract_text
 
 
 class ProcessorDispatcher:
@@ -11,5 +12,14 @@ class ProcessorDispatcher:
 
         if extension == ".pdf":
             return extract_pdf(file_path)
+
+        if extension in {
+            ".txt",
+            ".md",
+            ".py",
+            ".cpp",
+            ".java",
+        }:
+            return extract_text(file_path)
 
         raise ValueError(f"Unsupported file type: {extension}")

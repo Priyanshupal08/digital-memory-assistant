@@ -17,3 +17,8 @@ class DocumentService:
     def search_documents(self, query):
 
         return self.repository.search(query)
+
+
+    def delete_document(self, file_path):
+
+        return self.repository.delete_by_path(file_path)

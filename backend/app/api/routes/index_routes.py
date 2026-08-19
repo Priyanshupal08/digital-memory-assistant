@@ -2,11 +2,13 @@ from pathlib import Path
 import shutil
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from pydantic import BaseModel
 
 from app.services.indexing_service import IndexingService
 from app.database.session import SessionLocal
 from app.repositories.document_repository import DocumentRepository
 from app.services.document_service import DocumentService
+from app.indexer.folder_watcher import FolderWatcher
 
 
 router = APIRouter()
@@ -17,6 +19,14 @@ repository = DocumentRepository(db)
 document_service = DocumentService(repository)
 
 indexing_service = IndexingService(document_service)
+
+folder_watcher = FolderWatcher(indexing_service)
+
+watching_folder = None
+
+
+class WatchRequest(BaseModel):
+    folder: str
 
 
 @router.get("/index")
@@ -98,3 +108,62 @@ async def upload_document(file: UploadFile = File(...)):
             status_code=500,
             detail=f"Failed to process document: {str(e)}"
         )
+
+
+@router.post("/watch/start")
+async def start_watching(request: WatchRequest):
+
+    global watching_folder
+
+    folder = Path(request.folder).expanduser().resolve()
+
+    if not folder.exists():
+        raise HTTPException(
+            status_code=400,
+            detail="Folder does not exist"
+        )
+
+    if not folder.is_dir():
+        raise HTTPException(
+            status_code=400,
+            detail="Path is not a folder"
+        )
+
+    # Stop previous watcher if one is running
+    folder_watcher.stop()
+
+    # Index existing files first
+    indexing_service.index_folder(str(folder))
+
+    # Start watching the folder
+    folder_watcher.watch(str(folder))
+
+    watching_folder = str(folder)
+
+    return {
+        "message": "Folder monitoring started",
+        "folder": watching_folder
+    }
+
+
+@router.post("/watch/stop")
+async def stop_watching():
+
+    global watching_folder
+
+    folder_watcher.stop()
+
+    watching_folder = None
+
+    return {
+        "message": "Folder monitoring stopped"
+    }
+
+
+@router.get("/watch/status")
+async def watch_status():
+
+    return {
+        "watching": watching_folder is not None,
+        "folder": watching_folder
+    }

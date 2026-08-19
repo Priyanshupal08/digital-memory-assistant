@@ -7,6 +7,9 @@ import {
   Database,
   CheckCircle2,
   ArrowRight,
+  Folder,
+  Play,
+  Square,
 } from "lucide-react";
 
 type Document = {
@@ -14,6 +17,11 @@ type Document = {
   filename: string;
   type: string;
   path: string;
+};
+
+type WatchStatus = {
+  watching: boolean;
+  folder: string | null;
 };
 
 type Props = {
@@ -24,9 +32,20 @@ export default function Dashboard({ onNavigate }: Props) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [folder, setFolder] = useState("");
+  const [watchStatus, setWatchStatus] = useState<WatchStatus>({
+    watching: false,
+    folder: null,
+  });
+
+  const [watchLoading, setWatchLoading] = useState(false);
+  const [watchMessage, setWatchMessage] = useState("");
+
   const loadDocuments = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/documents");
+      const response = await fetch(
+        "http://127.0.0.1:8000/documents"
+      );
 
       if (!response.ok) {
         throw new Error("Failed to load documents");
@@ -41,9 +60,138 @@ export default function Dashboard({ onNavigate }: Props) {
     }
   };
 
+  const loadWatchStatus = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/watch/status"
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load watch status");
+      }
+
+      const data = await response.json();
+
+      setWatchStatus(data);
+
+      if (data.folder) {
+        setFolder(data.folder);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const startWatching = async () => {
+    if (!folder.trim()) {
+      setWatchMessage("Please enter a folder path.");
+      return;
+    }
+
+    setWatchLoading(true);
+    setWatchMessage("");
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/watch/start",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            folder: folder.trim(),
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to start monitoring");
+      }
+
+      setWatchStatus({
+        watching: true,
+        folder: data.folder,
+      });
+
+      setFolder(data.folder);
+
+      setWatchMessage(
+        "Folder monitoring started successfully."
+      );
+
+      await loadDocuments();
+    } catch (error) {
+      console.error(error);
+
+      setWatchMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to start monitoring."
+      );
+    } finally {
+      setWatchLoading(false);
+    }
+  };
+
+  const stopWatching = async () => {
+    setWatchLoading(true);
+    setWatchMessage("");
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/watch/stop",
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to stop monitoring");
+      }
+
+      setWatchStatus({
+        watching: false,
+        folder: null,
+      });
+
+      setWatchMessage(
+        "Folder monitoring stopped."
+      );
+    } catch (error) {
+      console.error(error);
+
+      setWatchMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to stop monitoring."
+      );
+    } finally {
+      setWatchLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadDocuments();
+    loadWatchStatus();
   }, []);
+
+  useEffect(() => {
+    if (!watchStatus.watching) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      loadDocuments();
+      loadWatchStatus();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [watchStatus.watching]);
 
   return (
     <div className="min-h-screen p-8">
@@ -58,6 +206,104 @@ export default function Dashboard({ onNavigate }: Props) {
           Your digital memory is ready. Search, explore and chat with
           your documents.
         </p>
+      </div>
+
+      {/* Local Memory */}
+      <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-600/20 p-3">
+            <Folder className="text-blue-400" />
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold">
+              Local Memory
+            </h2>
+
+            <p className="text-sm text-slate-500">
+              Automatically index files from a folder on your PC.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6">
+
+          <label className="mb-2 block text-sm text-slate-400">
+            Folder to monitor
+          </label>
+
+          <div className="flex gap-3">
+
+            <input
+              type="text"
+              value={folder}
+              onChange={(e) => setFolder(e.target.value)}
+              disabled={watchStatus.watching}
+              placeholder="Example: C:\DigitalMemoryTest"
+              className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500 disabled:opacity-60"
+            />
+
+            {!watchStatus.watching ? (
+              <button
+                onClick={startWatching}
+                disabled={watchLoading}
+                className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Play size={18} />
+                {watchLoading ? "Starting..." : "Start Monitoring"}
+              </button>
+            ) : (
+              <button
+                onClick={stopWatching}
+                disabled={watchLoading}
+                className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-5 py-3 font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+              >
+                <Square size={17} />
+                {watchLoading ? "Stopping..." : "Stop Monitoring"}
+              </button>
+            )}
+
+          </div>
+
+          {/* Status */}
+          <div className="mt-5 flex items-center gap-3">
+
+            <span
+              className={`h-3 w-3 rounded-full ${
+                watchStatus.watching
+                  ? "bg-emerald-400"
+                  : "bg-slate-600"
+              }`}
+            />
+
+            <span
+              className={
+                watchStatus.watching
+                  ? "text-emerald-400"
+                  : "text-slate-400"
+              }
+            >
+              {watchStatus.watching
+                ? "Monitoring Active"
+                : "Monitoring Inactive"}
+            </span>
+
+          </div>
+
+          {watchStatus.folder && (
+            <p className="mt-2 break-all text-sm text-slate-500">
+              Watching: {watchStatus.folder}
+            </p>
+          )}
+
+          {watchMessage && (
+            <p className="mt-4 text-sm text-slate-400">
+              {watchMessage}
+            </p>
+          )}
+
+        </div>
       </div>
 
       {/* Stats */}
