@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Search as SearchIcon, FileText } from "lucide-react";
 
 type SearchResult = {
-  id: number;
   filename: string;
-  type: string;
+  score: number;
   path: string;
 };
 
@@ -23,7 +22,7 @@ export default function Search() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/search?q=${encodeURIComponent(query)}`
+        `http://127.0.0.1:8000/semantic-search?q=${encodeURIComponent(query)}`
       );
 
       const data = await response.json();
@@ -98,9 +97,9 @@ export default function Search() {
                 {results.length} result(s) found
               </p>
 
-              {results.map((document) => (
+              {results.map((document, index) => (
                 <div
-                  key={document.id}
+                  key={`${document.filename}-${index}`}
                   className="rounded-xl border border-slate-800 bg-slate-900 p-5"
                 >
                   <div className="flex items-center gap-4">
@@ -115,7 +114,7 @@ export default function Search() {
                       </h2>
 
                       <p className="mt-1 text-sm text-slate-400">
-                        Type: {document.type.toUpperCase()}
+                        Relevance Score: {document.score.toFixed(4)}
                       </p>
                     </div>
 
