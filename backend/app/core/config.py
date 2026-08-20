@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
     VECTOR_DB_URL: str
+    CORS_ORIGINS: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(
         env_file=".env",
