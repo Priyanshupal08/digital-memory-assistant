@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/api";
 import { useState } from "react";
 import { Search as SearchIcon, FileText } from "lucide-react";
 
@@ -22,7 +23,7 @@ export default function Search() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/semantic-search?q=${encodeURIComponent(query)}`
+        apiUrl(`/semantic-search?q=${encodeURIComponent(query)}`)
       );
 
       const data = await response.json();

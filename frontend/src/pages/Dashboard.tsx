@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/api";
 import { useEffect, useState } from "react";
 import {
   FileText,
@@ -44,7 +45,7 @@ export default function Dashboard({ onNavigate }: Props) {
   const loadDocuments = async () => {
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/documents"
+        apiUrl("/documents")
       );
 
       if (!response.ok) {
@@ -63,7 +64,7 @@ export default function Dashboard({ onNavigate }: Props) {
   const loadWatchStatus = async () => {
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/watch/status"
+        apiUrl("/watch/status")
       );
 
       if (!response.ok) {
@@ -93,7 +94,7 @@ export default function Dashboard({ onNavigate }: Props) {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/watch/start",
+        apiUrl("/watch/start"),
         {
           method: "POST",
           headers: {
@@ -142,7 +143,7 @@ export default function Dashboard({ onNavigate }: Props) {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/watch/stop",
+        apiUrl("/watch/stop"),
         {
           method: "POST",
         }

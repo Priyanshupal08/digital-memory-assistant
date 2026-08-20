@@ -1,4 +1,3 @@
-@'
 # Backend
 backend/.env
 backend/venv/
@@ -11,14 +10,25 @@ backend/**/*.pyc
 # Frontend
 frontend/node_modules/
 frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+
+# Environment
+.env
+.env.local
+.env.*.local
 
 # Python
 *.pyc
 __pycache__/
 
-# Environment
-.env
-
 # Database
 *.db
-'@ | Set-Content .gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

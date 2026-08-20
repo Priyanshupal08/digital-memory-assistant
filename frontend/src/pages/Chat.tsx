@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/api";
 import { useState } from "react";
 import {
   MessageSquare,
@@ -6,10 +7,6 @@ import {
   Loader2,
   Trash2,
 } from "lucide-react";
-
-type Source = {
-  filename: string;
-};
 
 type ChatResponse = {
   question: string;
@@ -38,7 +35,7 @@ export default function Chat() {
       setLoading(true);
 
       const response = await fetch(
-        `http://127.0.0.1:8000/chat?q=${encodeURIComponent(currentQuestion)}`
+        apiUrl(`/chat?q=${encodeURIComponent(currentQuestion)}`)
       );
 
       if (!response.ok) {

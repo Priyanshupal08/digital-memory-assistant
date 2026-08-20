@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/api";
 import { useEffect, useRef, useState } from "react";
 import { FileText, RefreshCw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ export default function Documents() {
       setError("");
 
       const response = await fetch(
-        "http://127.0.0.1:8000/documents"
+        apiUrl("/documents")
       );
 
       if (!response.ok) {
@@ -63,7 +64,7 @@ export default function Documents() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/upload",
+        apiUrl("/upload"),
         {
           method: "POST",
           body: formData,
